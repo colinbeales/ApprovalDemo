@@ -1,0 +1,33 @@
+---
+name: Promote Internal
+title: "Promote Internal"
+description: Promote a private repo to internal
+labels:
+  - promote
+
+body:
+  - type: dropdown
+    attributes:
+      label: '>>>organisation<<<'
+      description: The organization
+      options:
+        - org1
+        - org2
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: '>>>repository-name-to-promote<<<'
+      description: The name of the demo repository to promote to internal
+      placeholder: repository name
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: '>>>justification<<<'
+      description: The demo template to use when creating the demo.
+      placeholder: business justification here...
+    validations:
+      required: true
