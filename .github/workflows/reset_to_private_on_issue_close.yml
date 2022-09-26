@@ -6,68 +6,26 @@ on:
      - closed
 
 jobs:
-  extract_promotion_request:
-    name: Extract Promotion Request
-    if: contains(github.event.issue.labels.*.name, 'promote') && contains(github.event.issue.labels.*.name, 'template') != true 
-
-    runs-on: ubuntu-20.04
+  get_issue_info:
+    runs-on: ubuntu-latest
     outputs:
-      approval_payload: ${{ steps.issue_payload.outputs.payload }}
-      
+      organisation: ${{ steps.extract_issue_title.outputs.organisation }}
+      repository: ${{ steps.extract_issue_body.outputs.repository }}
     steps:
-      - name: Extract Form Template Data
-        id: issue_payload
-        uses: peter-murray/issue-forms-body-parser@v1.1.0
-        with:
-          separator: '###'
-          issue_id: ${{ github.event.issue.number }}
-          label_marker_start: '>>>'
-          label_marker_end: '<<<'
-    
-  extract_from_json:
-      name: Extract JSON
-      runs-on: ubuntu-20.04
-      needs:
-      - extract_promotion_request
-      outputs:
-        organisation: ${{ steps.parse_json.outputs.organisation }}
-        repository: ${{ steps.parse_json.outputs.repository }}
-        justification: ${{ steps.parse_json.outputs.justification }}
-
-      steps:
-      - name: Parse out values from JSON payload
-        id: parse_json
-        uses: actions/github-script@v5.0.0
+      - id: extract_issue_title
         env:
-          approval_payload: ${{ needs.extract_promotion_request.outputs.approval_payload }}
-        with:
-          # The script to run
-          script: |
-            let approvalPayload;
-            try {
-              approvalPayload = JSON.parse(process.env.approval_payload);
-            } catch (err) {
-              core.error(`Failed to parse payload as valid JSON; ${err.message}`);
-            }
-            if (approvalPayload) {
-              const organisation = approvalPayload['organisation'];
-              const repository = approvalPayload['repository-name-to-promote'];
-              const justification = approvalPayload['justification'];
-            
-              console.log(organisation);
-              console.log(repository);
-              console.log(justification); 
-              core.setOutput('organisation', organisation);
-              core.setOutput('repository', repository);
-              core.setOutput('justification', justification);
-            }
-            
+          ORG: ${{ github.event.issue.title }}
+        run: echo "::set-output name=organisation::$ORG"
+      - id: extract_issue_body
+        env:
+          REPO: ${{ github.event.issue.body }}
+       
   update_repo_visibility:
     name: Update Repo Visibility
     environment: Production
     runs-on: ubuntu-20.04
     needs:
-      - extract_from_json
+      - get_issue_info
     
     steps:
       - name: Get Shortlived Token
@@ -78,7 +36,7 @@ jobs:
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
           organization: ${{ env.organisation }}
         env:
-          organisation: ${{ needs.extract_from_json.outputs.organisation }}
+          organisation: ${{ needs.get_issue_info.outputs.organisation }}
       
       - uses: octokit/request-action@v2.x
         id: update_repository_visibility
@@ -89,5 +47,5 @@ jobs:
           visibility: "private"
         env:
           GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
-          organisation: ${{ needs.extract_from_json.outputs.organisation }}
-          repository: ${{ needs.extract_from_json.outputs.repository }}
+          organisation: ${{ needs.get_issue_info.outputs.organisation }}
+          repository: ${{ needs.get_issue_info.outputs.repository }}
