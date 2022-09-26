@@ -61,5 +61,5 @@ _Note: Every organisation needs the GitHub App install top participate - includi
 
 ## Invoking an approval workflow
 
-Now your installed you can invoke the Approval workflow by creating an issue in your repository. The templates cloned in the `.github` folder will guide you to a issue form collecting the relevant fields which will invoke a workflow that will change your `Private` repo status to `Internal`.
+Now your installed you can invoke the Approval workflow by creating an issue in your repository. The subject for the issue will be the organisation name we will use and the content will have the reposiroty name within it. These two fields will be then used in a workflow that will change your `Private` repo status to `Internal`.
 
